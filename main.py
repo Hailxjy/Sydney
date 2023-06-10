@@ -7,7 +7,7 @@ import poe
 import discord
 from discord.ext import commands
 
-token = ""
+token = open("token.txt", "r").read().strip()
 
 client = commands.Bot(
     command_prefix=".",
