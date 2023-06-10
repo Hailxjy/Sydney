@@ -24,7 +24,7 @@ To use this bot, you need to install the required libraries mentioned in the cod
 
 - [x] Set up the bot with `discord.py` and `poe` library
 - [x] Implement commands to change the bot's mode, list modes, and clear conversation history
-- [x] Process and respond to messages using the selected language model
+- [x] Process and respond to messages using the selected language model in realtime
 - [x] Handle backticks for code blocks in the bot's responses
 - [ ] Add error handling and logging for potential issues
 - [ ] Implement additional features or commands as needed
