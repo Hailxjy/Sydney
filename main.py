@@ -180,13 +180,15 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         ftext.add("Modes:\n", style="bold", color="blue")
         for i, mode in enumerate(self.poe_modes.keys()):
             ftext.add(f"{i}) ", color="white")
-            ftext.add(f"{mode}\n", color="blue" if i != self.current_mode else "green")
-        
+            ftext.add(f"{mode}\n", color="blue" if i != self.current_mode else "cyan")
+        ftext.add(f"\nMode ", color="white")
+        ftext.add(f"{self.current_mode}", color="cyan")
+        ftext.add(f" is currently selected", color="white")
         await ctx.reply(ftext, mention_author=False)
 
     @commands.command()
     async def cleargpt(self, ctx):
-        self.poe_client.purge_conversation(self.get_mode(nick=True))
+        self.poe_client.send_chat_break(self.get_mode(nick=True))
         ftext = fText()
         ftext.add(f"Conversation for {self.get_mode()} cleared", color="green")
         await ctx.reply(ftext, mention_author=False)
@@ -212,6 +214,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
                 new_text_chunks.append(chunk)
                 
         return new_text_chunks
+    
     async def handle_poe(self):
         if not self.poe_queue:
             return
@@ -222,13 +225,13 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         self.poe_processing = True
         
         process_ftext = fText()
-        process_ftext.add("Processing...", color="white")
+        process_ftext.add("Processing...", color="blue")
         
         complete_ftext = fText()
-        complete_ftext.add("Completed...", color="green")
+        complete_ftext.add("Completed...", color="cyan")
         
         reserved_ftext = fText()
-        reserved_ftext.add("Reserved...", color="purple")
+        reserved_ftext.add("Reserved...", color="yellow")
         
         reserved_reply = await message.channel.send(reserved_ftext)
         used_reserved = False
@@ -277,7 +280,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
     async def on_message(self, message):
         if message.content[0] not in self.blacklist and message.author.id != self.client.user.id:
             ftext = fText()
-            ftext.add("Added to queue...", color="red")                
+            ftext.add("Added to queue...", color="pink")                
             reply = await message.reply(ftext, mention_author=False)
             self.poe_queue.append([message, reply])
             
