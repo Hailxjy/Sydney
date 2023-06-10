@@ -1,4 +1,4 @@
-# README.md
+# Sydney
 
 This is a Discord bot built using the `discord.py` library and the `poe` library. The bot is designed to process and respond to messages with the help of a language model (e.g., GPT-4). The bot also has the ability to change its mode, clear its conversation history, and handle backticks for code blocks.
 
