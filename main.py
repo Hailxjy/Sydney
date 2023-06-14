@@ -181,9 +181,8 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         for i, mode in enumerate(self.poe_modes.keys()):
             ftext.add(f"{i}) ", color="white")
             ftext.add(f"{mode}\n", color="blue" if i != self.current_mode else "cyan")
-        ftext.add(f"\nMode ", color="white")
-        ftext.add(f"{self.current_mode}", color="cyan")
-        ftext.add(f" is currently selected", color="white")
+        ftext.add(f"{self.get_mode()}", color="cyan")
+        ftext.add(" is currently selected", color="white")
         await ctx.reply(ftext, mention_author=False)
 
     @commands.command()
@@ -241,27 +240,30 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         original_reply = reply
         
         all_messages = [message]
-        for i, chunk in enumerate(self.poe_client.send_message(self.get_mode(nick=True), content)):
-            if len(text_buffer[-1]) + len(chunk["text_new"]) > 1950:
-                section = text_buffer[-1].split("\n")
-                first, second = "\n".join(section[:-1]), section[-1]
-                text_buffer[-1] = first
-                text_buffer.append(second)
-                text_buffer[-1] += chunk["text_new"]
-                
-                new_text_buffer = self.handle_backticks(text_buffer)
-                
-                await reply.edit(content=new_text_buffer[-2], allowed_mentions=discord.AllowedMentions.none())
-                await reserved_reply.edit(content=new_text_buffer[-1], allowed_mentions=discord.AllowedMentions.none())
-                used_reserved = True
-                reply = reserved_reply
-                all_messages.append(reply)
-            else:
-                text_buffer[-1] += chunk["text_new"]
-                
-            if i % 15 == 0:
-                new_text_buffer = self.handle_backticks(text_buffer)
-                await reply.edit(content=new_text_buffer[-1], allowed_mentions=discord.AllowedMentions.none())
+        try:
+            for i, chunk in enumerate(self.poe_client.send_message(self.get_mode(nick=True), content)):
+                if len(text_buffer[-1]) + len(chunk["text_new"]) > 1950:
+                    section = text_buffer[-1].split("\n")
+                    first, second = "\n".join(section[:-1]), section[-1]
+                    text_buffer[-1] = first
+                    text_buffer.append(second)
+                    text_buffer[-1] += chunk["text_new"]
+                    
+                    new_text_buffer = self.handle_backticks(text_buffer)
+                    
+                    await reply.edit(content=new_text_buffer[-2], allowed_mentions=discord.AllowedMentions.none())
+                    await reserved_reply.edit(content=new_text_buffer[-1], allowed_mentions=discord.AllowedMentions.none())
+                    used_reserved = True
+                    reply = reserved_reply
+                    all_messages.append(reply)
+                else:
+                    text_buffer[-1] += chunk["text_new"]
+                    
+                if i % 15 == 0:
+                    new_text_buffer = self.handle_backticks(text_buffer)
+                    await reply.edit(content=new_text_buffer[-1], allowed_mentions=discord.AllowedMentions.none())
+        except RuntimeError:
+            pass
         
         text_buffer[0] = text_buffer[0].replace(str(process_ftext), str(complete_ftext))
         new_text_buffer = self.handle_backticks(text_buffer)
@@ -280,7 +282,8 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
     async def on_message(self, message):
         if message.content[0] not in self.blacklist and message.author.id != self.client.user.id:
             ftext = fText()
-            ftext.add("Added to queue...", color="pink")                
+            ftext.add("Added to queue...", color="pink")      
+            ftext.add(f" ({len(self.poe_queue)})")
             reply = await message.reply(ftext, mention_author=False)
             self.poe_queue.append([message, reply])
             
