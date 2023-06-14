@@ -1,6 +1,6 @@
 # Sydney
 
-This is a Discord bot built using the `discord.py` library and the `poe` library. The bot is designed to process and respond to messages with the help of a language model (e.g., GPT-4). The bot also has the ability to change its mode, clear its conversation history, and handle backticks for code blocks.
+This is a Discord bot built using the `discord.py` library and the `poe` library. The bot is designed to process and respond to messages with the help of a language model api from poe (e.g. GPT-4). The bot also has the ability to change its mode, clear its conversation history, and handle backticks for code blocks.
 
 ## Features
 
@@ -31,4 +31,4 @@ To use this bot, you need to install the required libraries mentioned in the cod
 
 ## Additional Notes
 
-The code provided contains some hard-coded values, such as the bot token, which should be replaced with environment variables or secure storage solutions for proper security. Also, it's important to note that the code uses the GPT-4 language model, and any future changes to the language model or the `poe` library may require adjustments to the code.
+The discord.py library used for this is discord.py-self, allowing a user to be used as chatbot. It is against TOS so use at your own risk, if you somehow found this repo...
