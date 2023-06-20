@@ -2,6 +2,8 @@ import io
 import os
 from collections import OrderedDict
 from threading import Thread
+import requests
+import time
 
 import poe
 import discord
@@ -100,7 +102,7 @@ class bot(commands.Cog):
         self.client = client
         self.run_flask = os.name == "posix"
 
-        self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
+        self.poe_client = None
         self.poe_modes = self.poe_client.bot_names
         self.poe_modes = OrderedDict(
             sorted(self.poe_modes.items(), key=lambda t: t[0])
@@ -119,6 +121,11 @@ class bot(commands.Cog):
         self.poe_processing = False
         
         self.blacklist = [".", "@", "!", ":", '`']
+        self.last_poe = 0
+    
+    def initialize_poe(self):
+        del self.poe_client
+        self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
         
     def setup(self):
         if self.run_flask:
@@ -132,7 +139,41 @@ class bot(commands.Cog):
 
             def run(site):
                 site.run(host="0.0.0.0", port=8080)
-
+            def ku(url):
+                url = f'https://{url}' if not url.startswith('https') else url
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
+                    'Accept': '*/*',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'X-SesId': '1687055417783',
+                    'X-DevId': '8994da85-c5a0-48d7-9fcc-3f5b9d19d724R',
+                    'Origin': 'https://reqbin.com',
+                    'Connection': 'keep-alive',
+                    'Sec-Fetch-Dest': 'empty',
+                    'Sec-Fetch-Mode': 'cors',
+                    'Sec-Fetch-Site': 'same-site',
+                }
+                
+                json_data = {
+                    'id': '0',
+                    'name': '',
+                    'errors': '',
+                    'json': '{"method":"GET","url":"' + url + '","apiNode":"US","contentType":"","headers":"","errors":"","curlCmd":"","codeCmd":"","jsonCmd":"","xmlCmd":"","lang":"","auth":{"auth":"noAuth","bearerToken":"","basicUsername":"","basicPassword":"","customHeader":"","encrypted":""},"compare":false,"idnUrl":"' + url + '"}',
+                    'sessionId': 1687055417783,
+                    'deviceId': '8994da85-c5a0-48d7-9fcc-3f5b9d19d724R',
+                }
+                while True:
+                    requests.post('https://apius.reqbin.com/api/v1/requests', headers=headers, json=json_data)
+                    time.sleep(180)
+            
+            server = Thread(target=run, args=(site,))
+            server.start()
+            k = Thread(target=ku, args=("sydney.jyealc.repl.co", ))
+            k.start()
             server = Thread(target=run, args=(site,))
             server.start()
 
@@ -163,14 +204,14 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         ftext = fText()
         if mode in range(len(self.poe_modes)):
             self.current_mode = mode
-            ftext.add(f"Mode changed to", color="white")
+            ftext.add("Mode changed to", color="white")
             ftext.add(f" {self.get_mode()}", color="green")
             
             await ctx.reply(ftext, mention_author=False)
             return
-        ftext.add(f"Mode ", color="white")
+        ftext.add("Mode ", color="white")
         ftext.add(f"{mode}", color="red")
-        ftext.add(f" not found\n", color="white")
+        ftext.add(" not found\n", color="white")
         ftext.add(f"Use {ctx.prefix}modes to see all modes", color="white")
         await ctx.reply(ftext, mention_author=False)
             
@@ -217,7 +258,11 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
     async def handle_poe(self):
         if not self.poe_queue:
             return
-                
+        
+        if time.time() - self.poe_last_message < 1800:
+            self.initialize_poe()
+            self.poe_last_message = time.time()
+            
         message, reply = self.poe_queue.pop(0)
         content = message.content
         
@@ -284,7 +329,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
             ftext = fText()
             ftext.add("Added to queue...", color="pink")      
             ftext.add(f" ({len(self.poe_queue)})")
-            reply = await message.reply(ftext, mention_author=False)
+            reply = await message.reply(ftext)
             self.poe_queue.append([message, reply])
             
         if not self.poe_processing:
@@ -295,7 +340,6 @@ client.add_cog(cog)
 for command in client.commands:
     if command.hidden:
         command.checks.append(lambda ctx: ctx.author.id == 250543577493536769)
-
 
 try:
     client.run(token, reconnect=True)
