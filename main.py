@@ -102,7 +102,8 @@ class bot(commands.Cog):
         self.client = client
         self.run_flask = os.name == "posix"
 
-        self.poe_client = None
+        self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
+        self.last_poe = time.time()
         self.poe_modes = self.poe_client.bot_names
         self.poe_modes = OrderedDict(
             sorted(self.poe_modes.items(), key=lambda t: t[0])
@@ -121,7 +122,6 @@ class bot(commands.Cog):
         self.poe_processing = False
         
         self.blacklist = [".", "@", "!", ":", '`']
-        self.last_poe = 0
     
     def initialize_poe(self):
         del self.poe_client
@@ -259,7 +259,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         if not self.poe_queue:
             return
         
-        if time.time() - self.poe_last_message < 1800:
+        if time.time() - self.last_poe < 1800:
             self.initialize_poe()
             self.poe_last_message = time.time()
             
