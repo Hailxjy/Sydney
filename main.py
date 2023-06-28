@@ -101,9 +101,8 @@ class bot(commands.Cog):
         self.client = client
         self.run_flask = os.name == "posix"
 
-        self.poe_client = self.initialize_poe()
+        self.initialize_poe()
         self.poe_modes = self.poe_client.bot_names
-        print(self.poe_modes)
         self.poe_modes = OrderedDict(
             sorted(self.poe_modes.items(), key=lambda t: t[0])
         )
