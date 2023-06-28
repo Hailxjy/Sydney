@@ -96,21 +96,18 @@ class fText:
     def to_file(self):
         return io.StringIO(f"{self.prefix}\n{self.untext}\n{self.suffix}")
 
-
 class bot(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.run_flask = os.name == "posix"
 
-        self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
-        self.last_poe = time.time()
+        self.poe_client = self.initialize_poe()
         self.poe_modes = self.poe_client.bot_names
+        print(self.poe_modes)
         self.poe_modes = OrderedDict(
             sorted(self.poe_modes.items(), key=lambda t: t[0])
         )
-        self.poe_modes = OrderedDict(
-            [(v, k) for k, v in self.poe_modes.items()]
-        )
+        self.poe_modes = OrderedDict([(v, k) for k, v in self.poe_modes.items() if k not in ['kalitsun', 'gpt4second', 'chatgpt2nd']])
         self.current_mode = 0
         poe_keys = list(self.poe_modes.keys())
         for i in range(len(self.poe_modes)):
@@ -122,11 +119,11 @@ class bot(commands.Cog):
         self.poe_processing = False
         
         self.blacklist = [".", "@", "!", ":", '`']
-    
-    def initialize_poe(self):
-        del self.poe_client
-        self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
+        self.last_send = 0
         
+    def initialize_poe(self):
+        self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
+    
     def setup(self):
         if self.run_flask:
             from flask import Flask
@@ -259,10 +256,10 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         if not self.poe_queue:
             return
         
-        if time.time() - self.last_poe < 1800:
-            self.initialize_poe()
+        if time.time() - self.poe_last_message > 1800:
             self.poe_last_message = time.time()
-            
+            self.initialize_poe()
+        
         message, reply = self.poe_queue.pop(0)
         content = message.content
         
@@ -329,7 +326,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
             ftext = fText()
             ftext.add("Added to queue...", color="pink")      
             ftext.add(f" ({len(self.poe_queue)})")
-            reply = await message.reply(ftext)
+            reply = await message.reply(ftext, mention_author=False)
             self.poe_queue.append([message, reply])
             
         if not self.poe_processing:
