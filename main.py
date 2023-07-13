@@ -5,7 +5,6 @@ from threading import Thread
 import requests
 import time
 
-os.system("pip install --upgrade poe-api")
 import poe
 import discord
 from discord.ext import commands
@@ -120,6 +119,8 @@ class bot(commands.Cog):
         
         self.blacklist = [".", "!"]
         self.last_send = 0
+        
+        self.stream = False
         
     def initialize_poe(self):
         self.poe_client = poe.Client("JmkN8t5ZCfpwRB7Z-jp3Bg%3D%3D")
@@ -252,7 +253,13 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
                 
         return new_text_chunks
     
-    async def handle_poe(self):
+    async def handle_return(self):
+        if len(self.poe_queue) > 0:
+            await self.handle_poe()
+        else:
+            self.poe_processing = False
+            
+    async def handle_poe(self, stream=False):
         if not self.poe_queue:
             return
         
@@ -264,6 +271,38 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         content = message.content
         
         self.poe_processing = True
+        
+        sender = self.poe_client.send_message(self.get_mode(nick=True), content, timeout=5)
+        if not stream:
+            await message.add_reaction("⏳")
+            
+            final = [chunk['text'] for chunk in sender][-1]
+            final = [chunk for chunk in final.split("\n") if chunk]
+            sender = ['']
+            
+            for chunk in final:
+                if len(chunk + sender[-1]) > 1950:
+                    sender.append(chunk)
+                    continue
+                sender[-1] += chunk + "\n"
+
+            if sender[0] == "":
+                await message.remove_reaction("📥", self.client.user)
+                await message.remove_reaction("⏳", self.client.user)
+                self.last_send = 0
+                return await self.handle_return()
+            
+            await message.remove_reaction("📥", self.client.user)
+            await message.remove_reaction("⏳", self.client.user)
+            if len(sender) == 1:
+                await message.reply(sender[0], mention_author=False)
+                return await self.handle_return()
+            for i, chunk in enumerate(sender):
+                if i == 0:
+                    await message.reply(chunk, mention_author=False)
+                else:
+                    await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
+            return await self.handle_return()
         
         process_ftext = fText()
         process_ftext.add("Processing...", color="blue")
@@ -283,7 +322,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         
         all_messages = [message]
         try:
-            for i, chunk in enumerate(self.poe_client.send_message(self.get_mode(nick=True), content)):
+            for i, chunk in enumerate(sender):
                 if len(text_buffer[-1]) + len(chunk["text_new"]) > 1950:
                     section = text_buffer[-1].split("\n")
                     first, second = "\n".join(section[:-1]), section[-1]
@@ -315,22 +354,22 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         if not used_reserved:
             await reserved_reply.delete()
             
-        if len(self.poe_queue) > 0:
-            await self.handle_poe()
-        else:
-            self.poe_processing = False
+        return await self.handle_return()
         
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.content[0] not in self.blacklist and message.author.id != self.client.user.id:
+        if message.content[0] not in self.blacklist and message.author.id != self.client.user.id and self.stream:
             ftext = fText()
             ftext.add("Added to queue...", color="pink")      
             ftext.add(f" ({len(self.poe_queue)})")
             reply = await message.reply(ftext, mention_author=False)
             self.poe_queue.append([message, reply])
+        elif message.content[0] not in self.blacklist and message.author.id != self.client.user.id and not self.stream:
+            await message.add_reaction("📥")
+            self.poe_queue.append([message, None])
             
         if not self.poe_processing:
-            await self.handle_poe()
+            await self.handle_poe(stream=self.stream)
     
 cog = bot(client)
 client.add_cog(cog)
