@@ -5,6 +5,7 @@ from threading import Thread
 import requests
 import time
 
+os.system("pip install --upgrade poe-api")
 import poe
 import discord
 from discord.ext import commands
@@ -106,18 +107,18 @@ class bot(commands.Cog):
         self.poe_modes = OrderedDict(
             sorted(self.poe_modes.items(), key=lambda t: t[0])
         )
-        self.poe_modes = OrderedDict([(v, k) for k, v in self.poe_modes.items() if k not in ['kalitsun', 'gpt4second', 'chatgpt2nd']])
+        self.poe_modes = OrderedDict([(v, k) for k, v in self.poe_modes.items()])
         self.current_mode = 0
         poe_keys = list(self.poe_modes.keys())
         for i in range(len(self.poe_modes)):
-            if poe_keys[i] == "GPT-4":
+            if poe_keys[i] == "GPT-4-32k":
                 self.current_mode = i
                 break
         
         self.poe_queue = []
         self.poe_processing = False
         
-        self.blacklist = [".", "@", "!", ":", '`']
+        self.blacklist = [".", "!"]
         self.last_send = 0
         
     def initialize_poe(self):
@@ -255,8 +256,8 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         if not self.poe_queue:
             return
         
-        if time.time() - self.poe_last_message > 1800:
-            self.poe_last_message = time.time()
+        if time.time() - self.last_send > 1800:
+            self.last_send = time.time()
             self.initialize_poe()
         
         message, reply = self.poe_queue.pop(0)
