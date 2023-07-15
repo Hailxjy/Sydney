@@ -5,6 +5,7 @@ from threading import Thread
 import requests
 import time
 
+os.system("pip install poe-api")
 import poe
 import discord
 from discord.ext import commands
@@ -259,7 +260,7 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         else:
             self.poe_processing = False
             
-    async def handle_poe(self, stream=False):
+    async def handle_poe(self, stream=False, retries = 0):
         if not self.poe_queue:
             return
         
@@ -275,9 +276,17 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         sender = self.poe_client.send_message(self.get_mode(nick=True), content, timeout=5)
         if not stream:
             await message.add_reaction("⏳")
+            try:
+                final = [chunk['text'] for chunk in sender][-1]
+                final = [chunk for chunk in final.split("\n") if chunk]
+            except RuntimeError:
+                await message.remove_reaction("📥", self.client.user)
+                await message.remove_reaction("⏳", self.client.user)
+                if retries > 2:
+                    return await self.handle_return()
+                self.poe_queue.append([message, reply])
+                return await self.handle_poe(retries=retries+1)
             
-            final = [chunk['text'] for chunk in sender][-1]
-            final = [chunk for chunk in final.split("\n") if chunk]
             sender = ['']
             
             for chunk in final:
@@ -293,15 +302,17 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
                 return await self.handle_return()
             
             await message.remove_reaction("📥", self.client.user)
-            await message.remove_reaction("⏳", self.client.user)
+            
             if len(sender) == 1:
                 await message.reply(sender[0], mention_author=False)
+                await message.remove_reaction("⏳", self.client.user)
                 return await self.handle_return()
             for i, chunk in enumerate(sender):
                 if i == 0:
                     await message.reply(chunk, mention_author=False)
                 else:
                     await message.channel.send(chunk, allowed_mentions=discord.AllowedMentions.none())
+            await message.remove_reaction("⏳", self.client.user)
             return await self.handle_return()
         
         process_ftext = fText()
