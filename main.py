@@ -118,9 +118,10 @@ class bot(commands.Cog):
         self.poe_queue = []
         self.poe_processing = False
         
-        self.blacklist = [".", "!"]
+        self.blacklist = [".", "!", "@"]
         self.last_send = 0
         
+        self.sydney = True
         self.stream = False
         
     def initialize_poe(self):
@@ -225,6 +226,13 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
         ftext.add(" is currently selected", color="white")
         await ctx.reply(ftext, mention_author=False)
 
+    @commands.command()
+    async def toggle(self, ctx):
+        ftext = fText()
+        self.sydney = not self.sydney
+        ftext.add("Sydney", style="bold", color="green" if self.sydney else "red")
+        await ctx.reply(ftext, mention_author=False)
+        
     @commands.command()
     async def cleargpt(self, ctx):
         self.poe_client.send_chat_break(self.get_mode(nick=True))
@@ -366,9 +374,11 @@ url="https://www.youtube.com/watch?v=1m_ZoPTrtCk&t=10",
             await reserved_reply.delete()
             
         return await self.handle_return()
-        
+
     @commands.Cog.listener()
     async def on_message(self, message):
+        if not self.sydney:
+            return
         if message.content[0] not in self.blacklist and message.author.id != self.client.user.id and self.stream:
             ftext = fText()
             ftext.add("Added to queue...", color="pink")      
